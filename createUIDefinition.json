@@ -29,7 +29,7 @@
                         "name": "adminUsername",
                         "type": "Microsoft.Compute.UserNameTextBox",
                         "label": "Username",
-                        "toolTip": "Admin username for the virtual machines and the Active Directory domain.",
+                        "toolTip": "Admin username for the virtual machines.",
                         "osPlatform": "Linux",
                         "defaultValue": "testadmin",
                         "constraints": {
@@ -44,7 +44,7 @@
                             "confirmPassword": "Confirm password"
                         },
                         "toolTip": {
-                            "password": "Admin password for the virtual machines and the Active Directory domain."
+                            "password": "Admin password for the virtual machines."
                         },
                         "osPlatform": "Linux",
                         "constraints": {
@@ -104,8 +104,8 @@
                     {
                         "name": "dockerVmSize",
                         "type": "Microsoft.Compute.SizeSelector",
-                        "label": "Active Directory virtual machine size",
-                        "toolTip": "The size of the virtual machines for the primary and backup domain controllers.",
+                        "label": "Docker Host virtual machine size",
+                        "toolTip": "The size of the virtual machines for the docker hosts.",
                         "recommendedSizes": [
                             "Standard_DS2",
                             "Standard_DS3",
@@ -125,9 +125,9 @@
                         },
                         "osPlatform": "Linux",
                         "imageReference": {
-                            "publisher": "MicrosoftLinuxServer",
-                            "offer": "LinuxServer",
-                            "sku": "2012-R2-Datacenter"
+                            "publisher": "Canonical",
+                            "offer": "UbuntuServer",
+                            "sku": "14.04.2-LTS"
                         },
                         "count": "[steps('dockerHostConfig').dockerHostCount]"
                     }
@@ -136,29 +136,14 @@
         ],
         "outputs": {
             "location": "[location()]",
-            "sharepointFarmName" : "[basics('sharePointFarmName')]",
+            "domainName" : "[basics('domainName')]",
             "storageAccountNamePrefix": "[steps('infrastructureConfig').storageAccounts.prefix]",
             "storageAccountType": "[steps('infrastructureConfig').storageAccounts.type]",
             "adminUsername": "[steps('infrastructureConfig').adminUsername]",
             "adminPassword": "[steps('infrastructureConfig').adminPassword.password]",
             "virtualNetworkName" : "[steps('infrastructureConfig').virtualNetworkName]",
-            "adVMSize": "[steps('adConfig').adVmSize]",
-            "sqlVMSize": "[steps('sqlConfig').sqlVmSize]",
-            "witnessVMSize" : "[steps('sqlConfig').witnessVMSize]",
-            "spVMSize": "[steps('spConfig').spVmSize]",
-            "domainName": "[steps('adConfig').domainName]",
-            "dnsPrefix": "[steps('spConfig').spWebPublicIP.domainNameLabel]",
-            "spWebIPRGName" : "[steps('spConfig').spWebPublicIP.resourceGroup]",
-            "spWebIPAddressName" : "[steps('spConfig').spWebPublicIP.name]",
-            "spWebIPNewOrExisting" : "[steps('spConfig').spWebPublicIP.newOrExistingOrNone]",
-            "sqlServerServiceAccountUserName": "[steps('sqlConfig').sqlServerServiceAccountUsername]",
-            "sqlServerServiceAccountPassword": "[steps('sqlConfig').sqlServerServiceAccountPassword.password]",
-            "sharePointSetupUserAccountUserName": "[steps('spConfig').spSetupUserAccountUsername]",
-            "sharePointSetupUserAccountPassword": "[steps('spConfig').spSetupUserAccountPassword.password]",
-            "sharePointFarmAccountUserName": "[steps('spConfig').spServerFarmAccountUsername]",
-            "sharePointFarmAccountPassword": "[steps('spConfig').spServerFarmAccountPassword.password]",
-            "sharePointFarmPassphrasePassword": "[steps('spConfig').spServerFarmPassphrase.password]",
-            "spSiteTemplateName": "[steps('spConfig').spSiteTemplateName]"
+            "dockerHostCount": "[steps('dockerHostConfig').dockerHostCount]",
+            "dockerVmSize": "[steps('dockerHostConfig').dockerVmSize]"
         }
     }
 }
