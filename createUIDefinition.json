@@ -96,7 +96,7 @@
                         "defaultValue": "3",
                         "constraints": {
                             "required": true,
-                            "regex": "^\d+$",
+                            "regex": "^[0-9]+$",
                             "validationMessage": "Only positive integers."
                         }
                     },
