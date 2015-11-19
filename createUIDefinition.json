@@ -31,6 +31,7 @@
                         "label": "Username",
                         "toolTip": "Admin username for the virtual machines and the Active Directory domain.",
                         "osPlatform": "Linux",
+                        "defaultValue": "testadmin",
                         "constraints": {
                             "required": true
                         }   
@@ -127,7 +128,8 @@
                             "publisher": "MicrosoftLinuxServer",
                             "offer": "LinuxServer",
                             "sku": "2012-R2-Datacenter"
-                        }
+                        },
+                        "count": "[steps(dockerHostConfig).dockerHostCount]"
                     }
                 ]
             }
