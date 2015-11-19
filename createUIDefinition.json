@@ -129,7 +129,7 @@
                             "offer": "LinuxServer",
                             "sku": "2012-R2-Datacenter"
                         },
-                        "count": "[steps(dockerHostConfig).dockerHostCount]"
+                        "count": "[steps('dockerHostConfig').dockerHostCount]"
                     }
                 ]
             }
