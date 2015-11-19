@@ -89,6 +89,18 @@
                 "bladeTitle": "Docker Host Options",
                 "elements": [
                     {
+                        "name": "dockerHostCount",
+                        "type": "Microsoft.Common.TextBox",
+                        "label": "Number of Docker Hosts",
+                        "toolTip": "The number of docker hosts started",
+                        "defaultValue": "3",
+                        "constraints": {
+                            "required": true,
+                            "regex": "^\d+$",
+                            "validationMessage": "Only positive integers."
+                        }
+                    },
+                    {
                         "name": "dockerVmSize",
                         "type": "Microsoft.Compute.SizeSelector",
                         "label": "Active Directory virtual machine size",
@@ -115,8 +127,7 @@
                             "publisher": "MicrosoftLinuxServer",
                             "offer": "LinuxServer",
                             "sku": "2012-R2-Datacenter"
-                        },
-                        "count": 2
+                        }
                     }
                 ]
             }
