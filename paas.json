@@ -43,6 +43,10 @@
       "metadata": {
         "description": "The Ubuntu version for the VM. This will pick a fully patched image of this given Ubuntu version. Allowed values: 12.04.5-LTS, 14.04.2-LTS, 15.04."
       }
+    },
+    "tennantID": {
+        "type": "string",
+        "defaultValue": "blah"
     }
   },
   "variables": {
@@ -63,7 +67,8 @@
     "virtualNetworkName": "MyVNET",
     "vnetID": "[resourceId('Microsoft.Network/virtualNetworks',variables('virtualNetworkName'))]",
     "subnetRef": "[concat(variables('vnetID'),'/subnets/',variables('subnetName'))]",
-    "sshKeyPath": "[concat('/home/',parameters('adminUsername'),'/.ssh/authorized_keys')]"
+    "sshKeyPath": "[concat('/home/',parameters('adminUsername'),'/.ssh/authorized_keys')]",
+    "keyVaultName": "catalyzevmvault"
   },
   "resources": [
     {
@@ -75,6 +80,20 @@
         "accountType": "[variables('storageAccountType')]"
       }
     },
+    {
+      "type": "Microsoft.KeyVault/vaults",
+      "name": "[variables('keyVaultName')]",
+      "apiVersion": "2015-06-01",
+      "location": "[variables('location')]",
+      "properties": {
+        "enabledForDeployment": "true",
+        "enabledForDiskEncryption": "true",
+        "tenantId": "[parameters('tenantId')]",
+        "sku": {
+          "name": "premium",
+          "family": "A"
+        }
+      },
     {
       "apiVersion": "2015-05-01-preview",
       "type": "Microsoft.Network/publicIPAddresses",
@@ -176,7 +195,21 @@
               "uri": "[concat('http://',parameters('newStorageAccountName'),'.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/',variables('OSDiskName'),'.vhd')]"
             },
             "caching": "ReadWrite",
-            "createOption": "FromImage"
+            "createOption": "FromImage",
+            "encryptionSettings": {
+               "diskEncryptionKey": {
+                    "sourceVault": {
+                        "id": "[parameters('keyVaultResourceID')]"
+                    },
+                    "secretUrl": "[parameters('keyVaultSecretUrl')]"
+                },
+                "keyEncryptionKey": {
+                    "sourceVault": {
+                        "id": "[parameters('keyVaultResourceID')]"
+                    },
+                    "keyUrl": "[parameters('keyVaultKekUrl')]"
+                }
+            }
           }
         },
         "networkProfile": {
