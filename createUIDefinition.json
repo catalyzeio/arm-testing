@@ -13,6 +13,12 @@
                     "regex": "^[a-z0-9A-Z]{1,10}$",
                     "validationMessage": "Only letters and numbers are allowed, and the value must be 1-10 characters long."
                 }
+            },
+            {
+                "name": "objectID",
+                "type": "Microsoft.Common.TextBox",
+                "label": "AD App Object ID",
+                "defaultValue": "test",
             }
         ],
         "steps": [
@@ -137,6 +143,7 @@
         "outputs": {
             "location": "[location()]",
             "domainName" : "[basics('domainName')]",
+            "adAppObjectId": "[basics('objectID')]",
             "storageAccountNamePrefix": "[steps('infrastructureConfig').storageAccounts.prefix]",
             "storageAccountType": "[steps('infrastructureConfig').storageAccounts.type]",
             "adminUsername": "[steps('infrastructureConfig').adminUsername]",
