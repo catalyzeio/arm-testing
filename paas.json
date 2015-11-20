@@ -1,0 +1,127 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "type": "string",
+      "allowedValues": [
+        "East US"
+      ],
+      "metadata": {
+        "description": "Deployment location"
+      }
+    },
+    "vnetName": {
+      "type": "string",
+      "defaultValue": "POD03",
+      "metadata": {
+        "description": "VNet name"
+      }
+    },
+    "addressPrefix": {
+      "type": "string",
+      "defaultValue": "10.0.0.0/16",
+      "metadata": {
+        "description": "Address prefix"
+      }
+    },
+    "subnet1Prefix": {
+      "type": "string",
+      "defaultValue": "10.0.0.0/24",
+      "metadata": {
+        "description": "Subnet 1 Prefix"
+      }
+    },
+    "subnet1Name": {
+      "type": "string",
+      "defaultValue": "Private",
+      "metadata": {
+        "description": "Subnet 1 Name"
+      }
+    },    
+    "subnet2Prefix": {
+      "type": "string",
+      "defaultValue": "10.0.1.0/24",
+      "metadata": {
+        "description": "Subnet 2 Prefix"
+      }
+    },
+    "subnet2Name": {
+      "type": "string",
+      "defaultValue": "Public",
+      "metadata": {
+        "description": "Subnet 2 Name"
+      }
+    }    
+  },
+  "variables": {
+    "storageAccountType": "Standard_LRS"
+  },
+  "resources": [
+    {
+      "apiVersion": "2015-05-01-preview",
+      "type": "Microsoft.Network/virtualNetworks",
+      "name": "[parameters('vnetName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": [
+            "[parameters('addressPrefix')]"
+          ]
+        },
+        "subnets": [
+          {
+            "name": "[parameters('subnet1Name')]",
+            "properties": {
+              "addressPrefix": "[parameters('subnet1Prefix')]"
+            }
+          },
+          {
+            "name": "[parameters('subnet2Name')]",
+            "properties": {
+              "addressPrefix": "[parameters('subnet2Prefix')]"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts",
+      "name": "POD03Storage",
+      "apiVersion": "2015-05-01-preview",
+      "location": "[variables('location')]",
+      "properties": {
+        "accountType": "[variables('storageAccountType')]"
+      }
+    },
+    {
+      "apiVersion": "2015-05-01-preview",
+      "type": "Microsoft.Compute/virtualMachines",
+      "name": "saltMaster",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[concat('Microsoft.Storage/storageAccounts/', parameters('newStorageAccountName'))]",
+        "[concat('Microsoft.Network/networkInterfaces/', variables('nicName'))]"
+      ],
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "Standard_D1"
+        },
+        "osProfile": {
+          "computername": "saltMaster",
+          "linuxConfiguration": {
+            "disablePasswordAuthentication": "True",
+            "ssh": [
+              "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDE9wsMtdCxbolmoSRoyXrG9rivLhvLrKyM7CFhmsuV2aubHFodFCz70RpfVlKiKx5c3RfXKUXfKYhvG6GuoKy2gCGaYXeoLh2W9qzwbNUdvsWiIwLY1VD71q3Da7FTm93Ywt/8mm8TiQDVimMABlWXYYNXCh5dbxxt/ZuDIGl+ocW96dM7sKC/ecnI1iAHBsn14LSuxuZbbegd2cxWLMpdJvFAs2oWrDsSAxFSSDCxUEzJF8a2ADNoxQ/7VZorG20B0b9EeDcQjLLlZEkv53EAepSKG+nUNQiSMoKVlZ4DHqtQbpcCkLaXZSbndLZcXysXGbcC7L2Yjx35V1mbwvdx heath@Heaths-MacBook-Pro.local"
+            ]
+          },
+          "storageProfile": {
+            "imageReference": {
+              "publisher": "Canonical",
+              "offer": "UbuntuServer",
+              "sku": "[parameters('ubuntuOSVersion')]",
+        
+      } 
+    }
+  ]
+}
