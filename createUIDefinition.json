@@ -141,6 +141,8 @@
             "storageAccountType": "[steps('infrastructureConfig').storageAccounts.type]",
             "adminUsername": "[steps('infrastructureConfig').adminUsername]",
             "adminPassword": "[steps('infrastructureConfig').adminPassword.password]",
+            "adminSSHKey": "[steps('infrastructureConfig').adminPassword.sshPublicKey]",
+            "adminAuthType": "[steps('infrastructureConfig').adminPassword.authenticationType]",
             "virtualNetworkName" : "[steps('infrastructureConfig').virtualNetworkName]",
             "dockerHostCount": "[steps('dockerHostConfig').dockerHostCount]",
             "dockerVmSize": "[steps('dockerHostConfig').dockerVmSize]"
