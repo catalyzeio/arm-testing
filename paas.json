@@ -44,9 +44,50 @@
         "description": "The Ubuntu version for the VM. This will pick a fully patched image of this given Ubuntu version. Allowed values: 12.04.5-LTS, 14.04.2-LTS, 15.04."
       }
     },
-    "tennantID": {
-        "type": "string",
-        "defaultValue": "blah"
+    "AADClientID": {
+      "type": "string",
+      "metadata": {
+        "description": "Client ID of AAD app which has permissions to KeyVault"
+      }
+    },
+    "AADClientSecret": {
+      "type": "securestring",
+      "metadata": {
+        "description": "Client Secret of AAD app which has permissions to KeyVault"
+      }
+    },
+    "keyVaultResourceID": {
+      "type": "string",
+      "metadata": {
+        "description": "ResourceID of the KeyVault to place the volume encryption key"
+      }
+    },
+    "KeyVaultURL": {
+      "type": "string",
+      "metadata": {
+        "description": "URL of the KeyVault to place the volume encryption key"
+      }
+    },
+    "VolumeType": {
+      "type": "string",
+      "defaultValue": "Data",
+      "metadata": {
+      "description": "Type of the volume to perform encryption operation. For Linux VMs allowed volume type is Data only"
+      }
+    },
+    "sequenceVersion": {
+      "type": "string",
+      "defaultValue": "1",
+      "metadata": {
+        "description": "sequence version of the bitlocker operation. Increment this everytime an operation is performed on the same VM"
+      }
+    },
+    "Passphrase": {
+      "type": "securestring",
+      "defaultValue": null,
+      "metadata": {
+        "description": "the passphrase specified."
+      }
     }
   },
   "variables": {
@@ -68,7 +109,10 @@
     "vnetID": "[resourceId('Microsoft.Network/virtualNetworks',variables('virtualNetworkName'))]",
     "subnetRef": "[concat(variables('vnetID'),'/subnets/',variables('subnetName'))]",
     "sshKeyPath": "[concat('/home/',parameters('adminUsername'),'/.ssh/authorized_keys')]",
-    "keyVaultName": "catalyzevmvault"
+    "keyVaultName": "catalyzevmvault",
+    "extensionName": "AzureDiskEncryptionForLinux",
+    "extensionVersion": "0.1",
+    "encryptionOperation": "EnableEncryption"
   },
   "resources": [
     {
@@ -81,19 +125,27 @@
       }
     },
     {
-      "type": "Microsoft.KeyVault/vaults",
-      "name": "[variables('keyVaultName')]",
-      "apiVersion": "2015-06-01",
-      "location": "[variables('location')]",
-      "properties": {
-        "enabledForDeployment": "true",
-        "enabledForDiskEncryption": "true",
-        "tenantId": "[parameters('tenantId')]",
-        "sku": {
-          "name": "premium",
-          "family": "A"
-        }
-      },
+            "type": "Microsoft.Compute/virtualMachines/extensions",
+            "name": "[concat(variables('vmName'),'/', variables('extensionName'))]",
+            "apiVersion": "2015-06-15",
+            "location": "[resourceGroup().location]",
+            "properties": {
+                "publisher": "Microsoft.OSTCExtensions",
+                "type": "AzureDiskEncryptionForLinux",
+                "typeHandlerVersion": "[variables('extensionVersion')]",
+                "settings": {
+                    "AADClientID": "[parameters('AADClientID')]",
+                    "KeyVaultURL": "[parameters('KeyVaultURL')]",
+                    "VolumeType": "[parameters('VolumeType')]",
+                    "EncryptionOperation": "[variables('encryptionOperation')]",
+                    "SequenceVersion": "[parameters('sequenceVersion')]"
+                },
+                "protectedSettings": {
+                    "AADClientSecret": "[parameters('AADClientSecret')]",
+                    "Passphrase": "[parameters('Passphrase')]"
+                }
+            }
+    },
     {
       "apiVersion": "2015-05-01-preview",
       "type": "Microsoft.Network/publicIPAddresses",
@@ -197,18 +249,12 @@
             "caching": "ReadWrite",
             "createOption": "FromImage",
             "encryptionSettings": {
-               "diskEncryptionKey": {
-                    "sourceVault": {
-                        "id": "[parameters('keyVaultResourceID')]"
-                    },
-                    "secretUrl": "[parameters('keyVaultSecretUrl')]"
+              "diskEncryptionKey": {
+                "sourceVault": {
+                  "id": "[parameters('KeyVaultResourceID')]"
                 },
-                "keyEncryptionKey": {
-                    "sourceVault": {
-                        "id": "[parameters('keyVaultResourceID')]"
-                    },
-                    "keyUrl": "[parameters('keyVaultKekUrl')]"
-                }
+                "secretUrl": "[reference(resourceId('Microsoft.Compute/virtualMachines/extensions',  variables('vmName'), variables('extensionName'))).instanceView.statuses[0].message]"
+              }
             }
           }
         },
