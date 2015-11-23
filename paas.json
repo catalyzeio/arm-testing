@@ -56,18 +56,6 @@
         "description": "Client Secret of AAD app which has permissions to KeyVault"
       }
     },
-    "keyVaultResourceID": {
-      "type": "string",
-      "metadata": {
-        "description": "ResourceID of the KeyVault to place the volume encryption key"
-      }
-    },
-    "KeyVaultURL": {
-      "type": "string",
-      "metadata": {
-        "description": "URL of the KeyVault to place the volume encryption key"
-      }
-    },
     "VolumeType": {
       "type": "string",
       "defaultValue": "Data",
@@ -87,6 +75,13 @@
       "defaultValue": null,
       "metadata": {
         "description": "the passphrase specified."
+      }
+    },
+    "tenantId": {
+      "type": "string",
+      "defaultValue": null,
+      "metadata": {
+        "description": "Specifies the Azure Active Directory tenant ID that should be used for authenticating requests to the key vault. The ID must be specified as a GUID."
       }
     }
   },
@@ -116,45 +111,24 @@
   },
   "resources": [
     {
-      "type": "Microsoft.Storage/storageAccounts",
-      "name": "[parameters('newStorageAccountName')]",
-      "apiVersion": "2015-05-01-preview",
-      "location": "[variables('location')]",
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "name": "[concat(variables('vmName'),'/', variables('extensionName'))]",
+      "apiVersion": "2015-06-15",
+      "location": "[resourceGroup().location]",
       "properties": {
-        "accountType": "[variables('storageAccountType')]"
-      }
-    },
-    {
-            "type": "Microsoft.Compute/virtualMachines/extensions",
-            "name": "[concat(variables('vmName'),'/', variables('extensionName'))]",
-            "apiVersion": "2015-06-15",
-            "location": "[resourceGroup().location]",
-            "properties": {
-                "publisher": "Microsoft.OSTCExtensions",
-                "type": "AzureDiskEncryptionForLinux",
-                "typeHandlerVersion": "[variables('extensionVersion')]",
-                "settings": {
-                    "AADClientID": "[parameters('AADClientID')]",
-                    "KeyVaultURL": "[parameters('KeyVaultURL')]",
-                    "VolumeType": "[parameters('VolumeType')]",
-                    "EncryptionOperation": "[variables('encryptionOperation')]",
-                    "SequenceVersion": "[parameters('sequenceVersion')]"
-                },
-                "protectedSettings": {
-                    "AADClientSecret": "[parameters('AADClientSecret')]",
-                    "Passphrase": "[parameters('Passphrase')]"
-                }
-            }
-    },
-    {
-      "apiVersion": "2015-05-01-preview",
-      "type": "Microsoft.Network/publicIPAddresses",
-      "name": "[variables('publicIPAddressName')]",
-      "location": "[variables('location')]",
-      "properties": {
-        "publicIPAllocationMethod": "[variables('publicIPAddressType')]",
-        "dnsSettings": {
-          "domainNameLabel": "[parameters('dnsNameForPublicIP')]"
+        "publisher": "Microsoft.OSTCExtensions",
+        "type": "AzureDiskEncryptionForLinux",
+        "typeHandlerVersion": "[variables('extensionVersion')]",
+        "settings": {
+          "AADClientID": "[parameters('AADClientID')]",
+          "KeyVaultURL": "[reference(resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName'))).vaultUri]",
+          "VolumeType": "[parameters('VolumeType')]",
+          "EncryptionOperation": "[variables('encryptionOperation')]",
+          "SequenceVersion": "[parameters('sequenceVersion')]"
+        },
+        "protectedSettings": {
+          "AADClientSecret": "[parameters('AADClientSecret')]",
+          "Passphrase": "[parameters('Passphrase')]"
         }
       }
     },
@@ -177,6 +151,50 @@
             }
           }
         ]
+      }
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts",
+      "name": "[parameters('newStorageAccountName')]",
+      "apiVersion": "2015-05-01-preview",
+      "location": "[variables('location')]",
+      "properties": {
+        "accountType": "[variables('storageAccountType')]"
+      }
+    },
+    {
+      "type": "Microsoft.KeyVault/vaults",
+      "name": "[variables('keyVaultName')]",
+      "apiVersion": "2015-06-01",
+      "location": "[variables('location')]",
+      "properties": {
+        "enabledForDeployment": true,
+        "enabledForDiskEncryption": true,
+        "tenantId": "[parameters('tenantId')]",
+        "accessPolicies": [ {
+          "tenantId": "[parameters('tenantId')]",
+          "objectId": "[parameters('AADClientID')]",
+          "permissions": {
+            "keys": ["all"],
+            "secrets": ["all"]
+          }
+        } ],
+        "sku": {
+          "name": "standard",
+          "family": "A"
+        }
+      }
+    },    
+    {
+      "apiVersion": "2015-05-01-preview",
+      "type": "Microsoft.Network/publicIPAddresses",
+      "name": "[variables('publicIPAddressName')]",
+      "location": "[variables('location')]",
+      "properties": {
+        "publicIPAllocationMethod": "[variables('publicIPAddressType')]",
+        "dnsSettings": {
+          "domainNameLabel": "[parameters('dnsNameForPublicIP')]"
+        }
       }
     },
     {
@@ -251,7 +269,7 @@
             "encryptionSettings": {
               "diskEncryptionKey": {
                 "sourceVault": {
-                  "id": "[parameters('KeyVaultResourceID')]"
+                  "id": "[reference(resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName'))).id]"
                 },
                 "secretUrl": "[reference(resourceId('Microsoft.Compute/virtualMachines/extensions',  variables('vmName'), variables('extensionName'))).instanceView.statuses[0].message]"
               }
