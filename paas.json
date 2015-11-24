@@ -98,7 +98,7 @@
     "publicIPAddressName": "myPublicIP",
     "publicIPAddressType": "Dynamic",
     "vmStorageAccountContainerName": "vhds",
-    "vmName": "MyUbuntuVM",
+    "vmName": "diskencyrption",
     "vmSize": "Standard_D1",
     "virtualNetworkName": "MyVNET",
     "vnetID": "[resourceId('Microsoft.Network/virtualNetworks',variables('virtualNetworkName'))]",
@@ -110,28 +110,6 @@
     "encryptionOperation": "EnableEncryption"
   },
   "resources": [
-    {
-      "type": "Microsoft.Compute/virtualMachines/extensions",
-      "name": "[concat(variables('vmName'),'/', variables('extensionName'))]",
-      "apiVersion": "2015-06-15",
-      "location": "[resourceGroup().location]",
-      "properties": {
-        "publisher": "Microsoft.OSTCExtensions",
-        "type": "AzureDiskEncryptionForLinux",
-        "typeHandlerVersion": "[variables('extensionVersion')]",
-        "settings": {
-          "AADClientID": "[parameters('AADClientID')]",
-          "KeyVaultURL": "[reference(resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName'))).vaultUri]",
-          "VolumeType": "[parameters('VolumeType')]",
-          "EncryptionOperation": "[variables('encryptionOperation')]",
-          "SequenceVersion": "[parameters('sequenceVersion')]"
-        },
-        "protectedSettings": {
-          "AADClientSecret": "[parameters('AADClientSecret')]",
-          "Passphrase": "[parameters('Passphrase')]"
-        }
-      }
-    },
     {
       "apiVersion": "2015-05-01-preview",
       "type": "Microsoft.Network/virtualNetworks",
@@ -173,7 +151,7 @@
         "tenantId": "[parameters('tenantId')]",
         "accessPolicies": [ {
           "tenantId": "[parameters('tenantId')]",
-          "objectId": "[parameters('AADClientID')]",
+          "servicePrincipalName": "[parameters('AADClientID')]",
           "permissions": {
             "keys": ["all"],
             "secrets": ["all"]
@@ -265,15 +243,7 @@
               "uri": "[concat('http://',parameters('newStorageAccountName'),'.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/',variables('OSDiskName'),'.vhd')]"
             },
             "caching": "ReadWrite",
-            "createOption": "FromImage",
-            "encryptionSettings": {
-              "diskEncryptionKey": {
-                "sourceVault": {
-                  "id": "[reference(resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName'))).id]"
-                },
-                "secretUrl": "[reference(resourceId('Microsoft.Compute/virtualMachines/extensions',  variables('vmName'), variables('extensionName'))).instanceView.statuses[0].message]"
-              }
-            }
+            "createOption": "FromImage"
           }
         },
         "networkProfile": {
@@ -287,6 +257,44 @@
           "bootDiagnostics": {
              "enabled": "true",
              "storageUri": "[concat('http://',parameters('newStorageAccountName'),'.blob.core.windows.net')]"
+          }
+        }
+      }
+    },
+    {
+      "name": "UpdateEncryptionSettings",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "dependsOn": [
+        "[concat('Microsoft.Compute/virtualMachines/', variables('vmName'))]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "https://raw.githubusercontent.com/catalyzeio/arm-testing/master/updateencryptionsettings.json",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "vmName": {
+            "value": "[variables('vmName')]"
+          },
+          "AADClientID": {
+            "value": "[parameters('AADClientID')]"
+          },
+          "AADClientSecret": {
+            "value": "[parameters('AADClientSecret')]"
+          },
+          "KeyVaultResourceID": {
+            "value": "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))]"
+          },
+          "KeyVaultURL": {
+            "value": "[reference(resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))).vaultUri]"
+          },
+          "Passphrase": {
+            "value": "[parameters('Passphrase')]"
+          },
+          "VolumeType": {
+            "value": "[parameters('VolumeType')]"
           }
         }
       }
