@@ -50,6 +50,12 @@
         "description": "Client ID of AAD app which has permissions to KeyVault"
       }
     },
+    "AADObjectID": {
+      "type": "string",
+      "metadata": {
+        "description": "Object ID of AAD app which has permissions to KeyVault. azure ad sp show --search appName"
+      }
+    },
     "AADClientSecret": {
       "type": "securestring",
       "metadata": {
@@ -151,7 +157,7 @@
         "tenantId": "[parameters('tenantId')]",
         "accessPolicies": [ {
           "tenantId": "[parameters('tenantId')]",
-          "servicePrincipalName": "[parameters('AADClientID')]",
+          "objectID": "[parameters('AADObjectID')]",
           "permissions": {
             "keys": ["all"],
             "secrets": ["all"]
